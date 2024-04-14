@@ -9,11 +9,6 @@ class GoogleCloudStorageService:
 
     drive = GoogleDrive(auth)
 
-    @staticmethod
-    def get_file_path():
-        file_path = os.getcwd()
-        return file_path
-
     def create_file(self, file_name, path):
         try:
             file = self.drive.CreateFile({'title': file_name})
