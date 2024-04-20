@@ -1,21 +1,44 @@
-from aiogram.types import Message, BufferedInputFile
-from aiogram import Bot, types
+import os
+
+from aiogram.filters import StateFilter
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import StatesGroup, State
+from aiogram.fsm.storage.base import BaseStorage
+from aiogram.types import (
+    Message,
+    BufferedInputFile
+)
+
+from aiogram import (
+    Bot,
+    types,
+    Router,
+    F
+)
 from pydrive.files import FileNotUploadedError
+from api.keybords.reply import game_keyboard
 
 from api.handlers.errors_massages import DONT_GET_PHOTO
-from api.middlewares.settings import settings
 from api.google_cloud_storage.gcs_service import GoogleCloudStorageService as GCS
-import os
-from DB.queries import UserActivity, PhotoActivity
+from DB.queries import (
+    UserActivity,
+    PhotoActivity,
+)
 
 user_query = UserActivity()
 photo_query = PhotoActivity()
 
-bot = Bot(token=settings.bots.token)
+user_router = Router()
 
 
+class ResponsesUser(StatesGroup):
+    response_user = State()
+    photo = State()
+
+
+@user_router.message(F.text.casefold() == "start")
 async def get_start(message: Message):
-    await message.answer(text=f'Hello {message.from_user.id}')
+    await message.answer(text=f'Hello')
 
     data = {
         'username': message.from_user.username
@@ -24,11 +47,7 @@ async def get_start(message: Message):
     user_query.create_user(data)
 
 
-async def get_message(message: Message):
-    if message.from_user.id == settings.bots.admin_id:
-        return await message.answer(text='Good')
-
-
+@user_router.message(F.photo)
 async def upload_photo(message: Message, bot: Bot):
     file_path = str(GCS.get_file_path()) + '/'
 
@@ -44,24 +63,74 @@ async def upload_photo(message: Message, bot: Bot):
         await message.answer(text='Я успешно сохранил фото')
 
 
-async def get_photo(message: types.Message):
-    data = photo_query.get_photos()
+@user_router.message(StateFilter(ResponsesUser.response_user))
+@user_router.message(F.text.casefold() == "start game")
+async def get_photo(message: types.Message, state: FSMContext):
+    data_state = await state.get_data()
 
-    for photo in data:
-        try:
-            GCS().get_file(file_name=photo.name)
-            with open(photo.name, 'rb') as file:
-                data = file.read()
-                photo_path = BufferedInputFile(file=data, filename='post')
+    if message.text.casefold() != "start game":
+        photo: list = data_state.get("photo")
 
-                await message.answer_photo(photo=photo_path)
+        response = ['e34', 'e36', 'e38', 'e49']
 
-            file_path = os.path.realpath(photo.name)
-            os.remove(file_path)
-        except FileNotUploadedError:
-            await message.answer(text='Тех. сбой, я сообщил об этой ошибке разработчикам, скоро это починят')
-            return await get_error_message(error=DONT_GET_PHOTO, bot=bot)
+        if message.text.casefold() in response:
 
+            if data_state.get('response_user') is None:
+                await state.update_data(response_user=[message.text.casefold()])
 
-async def get_error_message(bot: Bot, error: str):
-    await bot.send_message(chat_id=settings.bots.admin_id, text=error)
+            else:
+                user_responses = data_state.get('response_user')
+                user_responses.append(message.text.casefold())
+
+                await state.update_data(response_user=user_responses)
+
+        file_path = os.path.realpath(photo[0].name)
+        os.remove(file_path)
+
+        photo.remove(photo[0])
+
+        await state.set_state(ResponsesUser.photo)
+        await state.update_data(photo=photo)
+
+        data_state = await state.get_data()
+
+    text1 = 'e34'
+    text2 = 'e36'
+    text3 = 'e38'
+    text4 = 'e49'
+
+    reply = game_keyboard(
+        text1,
+        text2,
+        text3,
+        text4
+    )
+
+    if len(data_state) == 0:
+        data = photo_query.get_photos()
+
+        await state.set_state(ResponsesUser.photo)
+        await state.update_data(photo=data)
+
+        data_state = await state.get_data()
+
+    if len(data_state.get('photo')) == 0:
+        await message.answer(text='Game over')
+        return
+
+    try:
+        photo = data_state.get("photo")
+
+        GCS().get_file(file_name=photo[0].name)
+
+        with open(photo[0].name, 'rb') as file:
+            data = file.read()
+            photo_path = BufferedInputFile(file=data, filename='post')
+
+            await message.answer_photo(photo=photo_path, reply_markup=reply)
+
+            await state.set_state(ResponsesUser.response_user)
+
+    except FileNotUploadedError:
+        await message.answer(text='Тех. сбой, я сообщил об этой ошибке разработчикам, скоро это починят')
+        return await message.answer(text=DONT_GET_PHOTO)

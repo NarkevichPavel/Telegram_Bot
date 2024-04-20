@@ -33,3 +33,8 @@ class GoogleCloudStorageService:
 
         file = self.drive.CreateFile({'id': file_id})
         file.GetContentFile(f'{file_name}')
+
+    @classmethod
+    def get_file_path(cls):
+        file_path = os.getcwd()
+        return file_path

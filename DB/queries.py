@@ -1,9 +1,14 @@
+from sqlalchemy.orm import selectinload
+
 from DB.db_conn import DBConnection
 from DB.db_engine import url_engine
 
 from DB.models import (
     Users,
-    Photos
+    Photos,
+    Answers,
+    Questions,
+    question_answer_association_table
 )
 
 
@@ -13,8 +18,12 @@ class UserActivity:
 
     def create_user(self, request):
         with self.manager as session:
-            session.add(Users(**request))
+            user = session.query(Users).filter(Users.username == request.get('username')).first()
 
+            if user:
+                return
+
+            session.add(Users(**request))
             session.commit()
 
     def count_users(self):
@@ -38,3 +47,24 @@ class PhotoActivity:
         with self.manager as session:
             data = session.query(Photos).all()
             return data
+
+
+with DBConnection(db_url=url_engine) as session:
+    photos = [
+        'e34.png',
+        'e36.png',
+        'e90.png',
+    ]
+
+    # question = session.query(Questions).one()
+    #
+    # data = question.answers
+    #
+    # for i in data:
+    #     print(i.name)
+
+    # answer = session.query(Answers).first()
+    #
+    # data = answer.questions
+    #
+    # print(data[0].id)
