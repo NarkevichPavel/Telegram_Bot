@@ -6,6 +6,7 @@ from aiogram import (
 from api.middlewares.settings import settings
 
 from api.handlers.basic import user_router
+from api.handlers.admin import admin_router
 
 ALLOWED_UPDATES = ['message, edited_message']
 
@@ -15,6 +16,7 @@ bot.my_admins_list = []
 dp = Dispatcher()
 
 dp.include_router(user_router)
+dp.include_router(admin_router)
 
 
 async def main():
