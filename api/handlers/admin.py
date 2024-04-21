@@ -1,5 +1,5 @@
 import os
-from aiogram import F, Router, types
+from aiogram import F, Router, types, Bot
 
 from aiogram.filters import StateFilter, Command
 from aiogram.fsm.context import FSMContext
@@ -8,12 +8,15 @@ from aiogram.fsm.state import StatesGroup, State
 from api.filters.chat_types import IsAdmin
 from api.keybords.reply import admin_keyboard, answer_keyboard
 
-from DB.queries import UserActivity
+from DB.queries import UserActivity, PhotoActivity
+from api.google_cloud_storage.gcs_service import GoogleCloudStorageService
 
 admin_router = Router()
 admin_router.message.filter(IsAdmin())
 
 user_query = UserActivity()
+photo_query = PhotoActivity()
+gcs = GoogleCloudStorageService()
 
 
 class Question(StatesGroup):
@@ -74,6 +77,36 @@ async def create_other_answer(message: types.Message, state: FSMContext):
 
 @admin_router.message(StateFilter(Question.correct_answer))
 async def create_correct_answer(message: types.Message, state: FSMContext):
-    await state.update_data(answer=[message.text.upper()])
+    await state.update_data(correct_answer=[message.text.upper()])
 
-    await message.answer(text='Good')
+    await message.answer(text='Скинь мне фотографию машины')
+    await state.set_state(Question.photo)
+
+
+@admin_router.message(StateFilter(Question.photo))
+async def get_photo(message: types.Message, state: FSMContext, bot: Bot):
+    if message.photo:
+        file_path = str(gcs.get_file_path()) + '/'
+
+        await bot.send_chat_action(chat_id=message.chat.id, action='upload_photo')
+
+        file = await bot.get_file(message.photo[-1].file_id)
+        await bot.download_file(file_path=file.file_path, destination=f"{file_path}{file.file_id}.png")
+
+        if gcs.create_file(file_name=f"{file.file_id}.png", path=file_path):
+            os.remove(file_path + f'{file.file_id}.png')
+
+            data = {'name': f'{file.file_id}.png'}
+            photo_query.create_photo(data)
+
+            await state.update_data(photo=data.get('name'))
+
+            await message.answer(text='Я успешно сохранил фото')
+
+    else:
+        await message.answer(text='Мне надо фотография!')
+
+        await message.answer(text='Скинь мне фотографию машины')
+        await state.set_state(Question.photo)
+
+        return

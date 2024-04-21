@@ -49,24 +49,6 @@ async def get_start(message: Message):
     user_query.create_user(data)
 
 
-@user_router.message(F.photo)
-async def upload_photo(message: Message, bot: Bot):
-    file_path = str(GCS.get_file_path()) + '/'
-
-    await bot.send_chat_action(chat_id=message.chat.id, action='upload_photo')
-
-    file = await bot.get_file(message.photo[-1].file_id)
-    await bot.download_file(file_path=file.file_path, destination=f"{file_path}{file.file_id}.png")
-
-    if GCS().create_file(file_name=f"{file.file_id}.png", path=file_path):
-        os.remove(file_path + f'{file.file_id}.png')
-
-        data = {'name': f'{file.file_id}.png'}
-        photo_query.create_photo(data)
-
-        await message.answer(text='Я успешно сохранил фото')
-
-
 @user_router.message(StateFilter(ResponsesUser.response_user))
 @user_router.message(F.text.casefold() == "start game")
 async def get_photo(message: types.Message, state: FSMContext):
