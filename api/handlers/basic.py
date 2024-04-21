@@ -1,3 +1,4 @@
+
 import os
 
 from aiogram.filters import StateFilter
@@ -41,7 +42,8 @@ async def get_start(message: Message):
     await message.answer(text=f'Hello')
 
     data = {
-        'username': message.from_user.username
+        'username': message.from_user.username,
+        'first_name': message.from_user.first_name
     }
 
     user_query.create_user(data)
@@ -50,6 +52,8 @@ async def get_start(message: Message):
 @user_router.message(F.photo)
 async def upload_photo(message: Message, bot: Bot):
     file_path = str(GCS.get_file_path()) + '/'
+
+    await bot.send_chat_action(chat_id=message.chat.id, action='upload_photo')
 
     file = await bot.get_file(message.photo[-1].file_id)
     await bot.download_file(file_path=file.file_path, destination=f"{file_path}{file.file_id}.png")

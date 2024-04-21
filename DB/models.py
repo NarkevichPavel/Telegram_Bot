@@ -63,7 +63,7 @@ class Users(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(unique=True)
-    phone: Mapped[str] = mapped_column(unique=True)
+    first_name: Mapped[str] = mapped_column(unique=True)
     date_joined: Mapped[DateTime] = mapped_column(DateTime, default=func.now())
 
 

@@ -56,6 +56,12 @@ with DBConnection(db_url=url_engine) as session:
         'e90.png',
     ]
 
+    photo = session.query(Photos).filter(Photos.name == photos[0]).first()
+    answer = session.query(Answers).first()
+
+    session.add(Questions(photo_id=photo.id, correct_answer_id=answer.id))
+    session.commit()
+
     # question = session.query(Questions).one()
     #
     # data = question.answers
