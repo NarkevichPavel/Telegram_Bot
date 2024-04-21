@@ -106,6 +106,8 @@ async def get_photo(message: types.Message, state: FSMContext, bot: Bot):
 
             await message.answer(text='Я успешно сохранил фото')
 
+            await state.clear()
+
     else:
         await message.answer(text='Мне надо фотография!')
 

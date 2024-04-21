@@ -1,5 +1,3 @@
-from sqlalchemy.orm import selectinload
-
 from DB.db_conn import DBConnection
 from DB.db_engine import url_engine
 
@@ -8,7 +6,6 @@ from DB.models import (
     Photos,
     Answers,
     Questions,
-    question_answer_association_table
 )
 
 
@@ -90,3 +87,31 @@ class QuestionActivity:
             for answer in answers:
                 question.answers.append(answer)
                 session.commit()
+
+    def get_answers_question(self, photo_name):
+        with self.manager as session:
+            photo = session.query(Photos).filter(Photos.name == photo_name).first()
+            question = session.query(Questions).filter(Questions.photo_id == photo.id).first()
+
+            answers = []
+
+            for answer in question.answers:
+                answers.append(answer.name)
+
+            return answers
+
+    def get_correct_answer(self, photo_id, user_answer):
+        with self.manager as session:
+            question = session.query(Questions).filter(Questions.photo_id == photo_id).first()
+            correct_answer_id = question.correct_answer_id
+
+            correct_answer = session.query(Answers).filter(Answers.id == correct_answer_id).first()
+
+            if user_answer == correct_answer.name:
+                return correct_answer.name
+
+            return
+
+
+
+
