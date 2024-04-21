@@ -22,8 +22,8 @@ Base = declarative_base()
 question_answer_association_table = Table(
     "question_answer_association_table",
     Base.metadata,
-    Column("question_id", ForeignKey("question.id"), primary_key=True, nullable=False),
-    Column("answers_id", ForeignKey("answers.id"), primary_key=True,  nullable=False),
+    Column("question_id", ForeignKey("question.id"), nullable=False),
+    Column("answers_id", ForeignKey("answers.id"),  nullable=False),
     UniqueConstraint("question_id", "answers_id", name="question_answer_association_unique"),
 )
 

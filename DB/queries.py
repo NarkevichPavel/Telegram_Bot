@@ -32,45 +32,61 @@ class UserActivity:
             return data
 
 
-class PhotoActivity:
+class QuestionActivity:
 
     def __init__(self):
         self.manager = DBConnection(db_url=url_engine)
 
-    def create_photo(self, request):
+    def create_photo(self, data: str):
         with self.manager as session:
-            session.add(Photos(**request))
-
+            session.add(Photos(name=data))
             session.commit()
+
+            photo = session.query(Photos).filter(Photos.name == data).first()
+            return photo.id
 
     def get_photos(self):
         with self.manager as session:
             data = session.query(Photos).all()
             return data
 
+    def create_answer(self, data: list):
+        with self.manager as session:
+            for obj in data:
+                answer = session.query(Answers).filter(Answers.name == obj).first()
 
-with DBConnection(db_url=url_engine) as session:
-    photos = [
-        'e34.png',
-        'e36.png',
-        'e90.png',
-    ]
+                if answer:
+                    continue
 
-    photo = session.query(Photos).filter(Photos.name == photos[0]).first()
-    answer = session.query(Answers).first()
+                session.add(Answers(name=obj))
+                session.commit()
 
-    session.add(Questions(photo_id=photo.id, correct_answer_id=answer.id))
-    session.commit()
+    def search_answer(self, data: list):
+        with self.manager as session:
+            answers = []
 
-    # question = session.query(Questions).one()
-    #
-    # data = question.answers
-    #
-    # for i in data:
-    #     print(i.name)
+            for obj in data:
+                answer = session.query(Answers).filter(Answers.name == obj).first()
+                answers.append(answer)
 
-    # answer = session.query(Answers).first()
-    #
-    # data = answer.questions
-    #
-    # print(data[0].id)
+            return answers
+
+    def create_question(self, data: dict):
+        with self.manager as session:
+            self.create_answer(data=data.get('answer'))
+
+            answers = self.search_answer(data.get('answer'))
+            correct_answer = self.search_answer(data.get('correct_answer'))
+            photo = self.create_photo(data.get('photo'))
+
+            session.add(Questions(
+                photo_id=photo,
+                correct_answer_id=correct_answer[0].id,
+            ))
+            session.commit()
+
+            question = session.query(Questions).filter(Questions.photo_id == photo).first()
+
+            for answer in answers:
+                question.answers.append(answer)
+                session.commit()
