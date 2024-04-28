@@ -104,7 +104,11 @@ async def get_photo(message: types.Message, state: FSMContext):
         data_state = await state.get_data()
 
     if len(data_state.get('photo')) == 0:
-        if len(data_state.get('correct_answer')) == 3:
+
+        if data_state.get('response_user') is None:
+            return await message.answer(text='Я разочарован в тебе')
+
+        elif len(data_state.get('correct_answer')) == 3:
             await message.answer(text='Да ты шаришь в тачках, лучший!')
 
         elif len(data_state.get('correct_answer')) == 2:
