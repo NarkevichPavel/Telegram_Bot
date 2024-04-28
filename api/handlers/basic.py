@@ -14,7 +14,7 @@ from aiogram import (
     F
 )
 from pydrive.files import FileNotUploadedError
-from api.keybords.reply import game_keyboard
+from api.keybords.reply import game_keyboard, user_keyboard
 
 from api.handlers.errors_massages import DONT_GET_PHOTO
 from api.google_cloud_storage.gcs_service import GoogleCloudStorageService as GCS
@@ -37,7 +37,7 @@ class ResponsesUser(StatesGroup):
 
 @user_router.message(Command('start'))
 async def get_start(message: Message):
-    await message.answer(text=f'Hello')
+    await message.answer(text='Отлично, давай начнем.', reply_markup=user_keyboard())
 
     data = {
         'username': message.from_user.username,
@@ -48,11 +48,12 @@ async def get_start(message: Message):
 
 
 @user_router.message(StateFilter(ResponsesUser.response_user))
+@user_router.message(F.text == 'Начать игру')
 @user_router.message(Command('start_game'))
 async def get_photo(message: types.Message, state: FSMContext):
     data_state = await state.get_data()
 
-    if message.text.casefold() != "/start_game":
+    if message.text.casefold() != "/start_game" and message.text != 'Начать игру':
         photo: list = data_state.get("photo")
 
         response = question_query.get_answers_question(photo[0].name)
@@ -105,17 +106,20 @@ async def get_photo(message: types.Message, state: FSMContext):
 
     if len(data_state.get('photo')) == 0:
 
-        if data_state.get('response_user') is None:
-            return await message.answer(text='Я разочарован в тебе')
+        if data_state.get('correct_answer') is None:
+            return await message.answer(text='Я разочарован в тебе', reply_markup=user_keyboard())
 
         elif len(data_state.get('correct_answer')) == 3:
-            await message.answer(text='Да ты шаришь в тачках, лучший!')
+            await message.answer(text='Да ты шаришь в тачках, лучший!', reply_markup=user_keyboard())
 
         elif len(data_state.get('correct_answer')) == 2:
-            await message.answer(text='Неплохо, ты сделал одну ошибку, попробуй пройти игру еще раз!')
+            await message.answer(
+                text='Неплохо, ты сделал одну ошибку, попробуй пройти игру еще раз!',
+                reply_markup=user_keyboard()
+            )
 
         else:
-            await message.answer(text='ТЫ бездарь!')
+            await message.answer(text='ТЫ бездарь!', reply_markup=user_keyboard())
 
         await state.clear()
 

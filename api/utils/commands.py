@@ -1,12 +1,12 @@
 from aiogram import Bot
-from aiogram.types import BotCommand, BotCommandScopeDefault, Update
+from aiogram.types import BotCommand, BotCommandScopeDefault
 
 
 async def set_command(bot: Bot):
     commands = [
         BotCommand(
-            command='menu',
-            description='Меню.'
+            command='/start_game',
+            description='Начать игру.'
         )
     ]
 

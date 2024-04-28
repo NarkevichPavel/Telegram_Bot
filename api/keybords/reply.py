@@ -1,4 +1,4 @@
-from aiogram.utils.keyboard import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.keyboard import ReplyKeyboardMarkup, KeyboardButton
 
 
 def game_keyboard(text1: str, text2: str, text3: str, text4: str):
@@ -43,5 +43,15 @@ def answer_keyboard(data: list):
             KeyboardButton(text=data[3]),
         ]
     ], one_time_keyboard=True)
+
+    return keyboard
+
+
+def user_keyboard():
+    keyboard = ReplyKeyboardMarkup(keyboard=[
+        [
+            KeyboardButton(text='Начать игру')
+        ]
+    ], one_time_keyboard=True, resize_keyboard=True)
 
     return keyboard
