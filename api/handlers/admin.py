@@ -104,7 +104,7 @@ async def get_photo(message: types.Message, state: FSMContext, bot: Bot):
             state_data = await state.get_data()
             question_query.create_question(state_data)
 
-            await message.answer(text='Я успешно сохранил фото')
+            await message.answer(text='Я успешно сохранил фото', reply_markup=admin_keyboard())
 
             await state.clear()
 
