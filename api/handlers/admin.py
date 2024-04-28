@@ -26,7 +26,7 @@ class Question(StatesGroup):
     correct_answer = State()
 
 
-@admin_router.message(Command('admin_panel'))
+@admin_router.message(Command('menu'))
 async def admin_panel(message: types.Message):
     reply = admin_keyboard()
     await message.answer(text='Вот доступные действия', reply_markup=reply)
